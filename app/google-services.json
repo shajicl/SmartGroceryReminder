@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "999365431412",
+    "project_id": "smartgroceryreminder-14233",
+    "storage_bucket": "smartgroceryreminder-14233.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:999365431412:android:3e08e14903fe01397d8121",
+        "android_client_info": {
+          "package_name": "week11.st339556.finalProject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCIQGfViq1p-JjSUehpilhgJyu4008K8I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
