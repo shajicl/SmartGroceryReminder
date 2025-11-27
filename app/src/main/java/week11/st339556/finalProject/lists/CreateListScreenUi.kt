@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -63,6 +65,8 @@ fun CreateListScreenUi(
     var isHouseholdMenuExpanded by remember { mutableStateOf(false) }
 
     var currentItem by remember { mutableStateOf("") }
+    var currentItemQty by remember { mutableStateOf("") }
+    var currentItemBrand by remember { mutableStateOf("") }
     var items by remember { mutableStateOf(listOf<String>()) }
 
     val priorities = listOf("Low", "Medium", "High")
@@ -89,6 +93,7 @@ fun CreateListScreenUi(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1FF)),
             elevation = CardDefaults.cardElevation(4.dp)
+
         ) {
             Column(
                 modifier = Modifier
@@ -131,6 +136,7 @@ fun CreateListScreenUi(
                         modifier = Modifier
                             .padding(horizontal = 20.dp, vertical = 16.dp)
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                     ) {
 
                         // -------- List Name --------
@@ -219,15 +225,45 @@ fun CreateListScreenUi(
                         )
                         Spacer(Modifier.height(4.dp))
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column (
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+
+                            //for item name
                             OutlinedTextField(
                                 value = currentItem,
                                 onValueChange = { currentItem = it },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 placeholder = { Text("Item") },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                                    focusedContainerColor = Color(0xFFF5F5F5)
+                                )
+                            )
+
+                            //for quantity
+                            OutlinedTextField(
+                                value = currentItemQty,
+                                onValueChange = { currentItemQty = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                placeholder = { Text("Quantity") },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                                    focusedContainerColor = Color(0xFFF5F5F5)
+                                )
+                            )
+
+                            //for brand (optional)
+                            OutlinedTextField(
+                                value = currentItemBrand,
+                                onValueChange = { currentItemBrand = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                placeholder = { Text("Brand (optional)") },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -239,10 +275,22 @@ fun CreateListScreenUi(
 
                             Button(
                                 onClick = {
-                                    val trimmed = currentItem.trim()
-                                    if (trimmed.isNotEmpty()) {
-                                        items = items + trimmed
+                                    val itemName = currentItem.trim()
+                                    val itemQty = currentItemQty.trim()
+                                    val itemBrand = currentItemBrand.trim()
+
+                                    if (itemName.isNotEmpty()) {
+
+                                        val item = buildString {
+                                            append(itemName)
+                                            if (itemQty.isNotEmpty()) append(" (x$itemQty)")
+                                            if (itemBrand.isNotEmpty()) append(" - $itemBrand")
+                                        }
+                                        items = items + item
+
                                         currentItem = ""
+                                        currentItemQty = ""
+                                        currentItemBrand = ""
                                     }
                                 },
                                 shape = RoundedCornerShape(12.dp),
