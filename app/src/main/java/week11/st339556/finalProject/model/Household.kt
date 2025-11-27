@@ -8,6 +8,8 @@ data class Household (
     val groceryListIds: List<String> = emptyList(),
 
     @DocumentId
-    val householdId: String = ""
+    val id: String = ""
 
 )
+
+

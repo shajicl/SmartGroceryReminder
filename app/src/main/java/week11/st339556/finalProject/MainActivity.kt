@@ -28,6 +28,7 @@ import week11.st339556.finalProject.auth.SignUpScreenUi
 import week11.st339556.finalProject.auth.LoginScreenUi   // <— your login screen
 import week11.st339556.finalProject.auth.SignUpScreen
 import week11.st339556.finalProject.home.HomeScreenUi
+import week11.st339556.finalProject.household.HouseholdScreenUi
 import week11.st339556.finalProject.lists.CreateListScreenUi
 import week11.st339556.finalProject.lists.GroceryList
 import week11.st339556.finalProject.lists.ListInfoScreenUi
@@ -81,7 +82,7 @@ class MainActivity : ComponentActivity() {
                                 onMyListsClick = {
                                     navController.navigate("myLists")
                                 },
-                                onHouseholdClick = { /* TODO */ },
+                                onHouseholdClick = { navController.navigate("household") },
                                 onStoresClick = { /* TODO */ },
                                 onSettingsClick = { /* TODO */ },
                                 onViewProfileClick = { /* TODO */ }
@@ -135,26 +136,18 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("myLists")
                                 },
                                 onHouseholdTabClick = {
-                                    // later
+                                    navController.navigate("household")
                                 }
                             )
                         }
 
-                        composable("myLists") {
-                            MyListsRoute(
-                                onBackClick = { navController.popBackStack() },
-                                onOpenList = { list ->
-                                    // open in read-only or edit screen
-                                    navController.navigate("listInfo/${list.id}")
-                                },
-                                onEditList = { list ->
-                                    navController.navigate("listInfo/${list.id}")
-                                },
-                                onHouseholdTabClick = {
-                                    // later
-                                }
+                        composable("household") {
+                            HouseholdScreenUi(
+                                navController = navController
                             )
                         }
+
+
 
                         composable("listInfo/{listId}") { backStackEntry ->
                             val listId = backStackEntry.arguments?.getString("listId") ?: return@composable
