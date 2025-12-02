@@ -27,6 +27,7 @@ import week11.st339556.finalProject.auth.ForgotPasswordScreen
 import week11.st339556.finalProject.auth.SignUpScreenUi
 import week11.st339556.finalProject.auth.LoginScreenUi   // <— your login screen
 import week11.st339556.finalProject.auth.SignUpScreen
+import week11.st339556.finalProject.grocery.StoreListScreen
 import week11.st339556.finalProject.home.HomeScreenUi
 import week11.st339556.finalProject.household.HouseholdScreenUi
 import week11.st339556.finalProject.lists.CreateListScreenUi
@@ -83,7 +84,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("myLists")
                                 },
                                 onHouseholdClick = { navController.navigate("household") },
-                                onStoresClick = { /* TODO */ },
+                                onStoresClick = { navController.navigate("stores")},
                                 onSettingsClick = { /* TODO */ },
                                 onViewProfileClick = { /* TODO */ }
                             )
@@ -141,12 +142,35 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        composable("myLists") {
+                            MyListsRoute(
+                                onBackClick = { navController.popBackStack() },
+                                onOpenList = { list ->
+                                    navController.navigate("listInfo/${list.id}")
+                                },
+                                onEditList = { list ->
+                                    // For now, navigate to list info which can handle editing
+                                    navController.navigate("listInfo/${list.id}")
+                                },
+                                onHouseholdTabClick = {
+                                    navController.navigate("household")
+                                }
+                            )
+                        }
+
+
+
                         composable("household") {
                             HouseholdScreenUi(
                                 navController = navController
                             )
                         }
 
+                        composable("stores") {
+                            StoreListScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
 
 
                         composable("listInfo/{listId}") { backStackEntry ->
