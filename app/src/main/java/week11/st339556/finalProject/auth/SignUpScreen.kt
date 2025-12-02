@@ -1,9 +1,13 @@
 package week11.st339556.finalProject.auth
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import android.widget.Toast
 
 @Composable
 fun SignUpScreen(
@@ -11,23 +15,48 @@ fun SignUpScreen(
     viewModel: AuthViewModel = viewModel()
 ) {
     val state by viewModel.uiState
+    val context = LocalContext.current
+
+    // Handle registration success
+    LaunchedEffect(state.isLoginSuccessful) {
+        if (state.isLoginSuccessful) {
+            Toast.makeText(
+                context,
+                "Account created successfully!",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            // Navigate to home screen
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
+    // Handle errors
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+        }
+    }
 
     SignUpScreenUi(
-        onCreateAccountClick = { name, email, password, householdId ->
-            // Put the email + password into the ViewModel state
-            viewModel.onEmailChange(email)
-            viewModel.onPasswordChange(password)
-            viewModel.register(name = name, householdId = householdId)
+        onSignUpSuccess = { userId, householdId ->
 
-            // Call ViewModel.register – this actually talks to Firebase
-            viewModel.register(name = name, householdId = householdId)
+
+            Toast.makeText(
+                context,
+                "Account created! User ID: $userId, Household ID: $householdId",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            // Navigate to home
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
         },
         onSignInClick = {
-            // Go back to login screen
             navController.popBackStack()
         }
     )
-
-    // OPTIONAL: you can also show state.errorMessage here as a Snackbar/Toast
-    // if you want global error handling.
 }
