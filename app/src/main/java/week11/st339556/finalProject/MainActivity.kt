@@ -4,19 +4,10 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,15 +15,13 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import week11.st339556.finalProject.auth.ForgotPasswordScreen
-import week11.st339556.finalProject.auth.SignUpScreenUi
 import week11.st339556.finalProject.auth.LoginScreenUi   // <— your login screen
 import week11.st339556.finalProject.auth.SignUpScreen
 import week11.st339556.finalProject.home.HomeScreenUi
 import week11.st339556.finalProject.lists.CreateListScreenUi
-import week11.st339556.finalProject.lists.GroceryList
 import week11.st339556.finalProject.lists.ListInfoScreenUi
 import week11.st339556.finalProject.lists.MyListsRoute
-import week11.st339556.finalProject.lists.Priority
+import week11.st339556.finalProject.settings.SettingsScreen
 
 
 import week11.st339556.finalProject.ui.theme.SmartGroceryReminderTheme
@@ -81,9 +70,15 @@ class MainActivity : ComponentActivity() {
                                 onMyListsClick = {
                                     navController.navigate("myLists")
                                 },
+<<<<<<< Updated upstream
                                 onHouseholdClick = { /* TODO */ },
                                 onStoresClick = { /* TODO */ },
                                 onSettingsClick = { /* TODO */ },
+=======
+                                onHouseholdClick = { navController.navigate("household") },
+                                onStoresClick = { navController.navigate("stores")},
+                                onSettingsClick = { navController.navigate("settings") },
+>>>>>>> Stashed changes
                                 onViewProfileClick = { /* TODO */ }
                             )
                         }
@@ -156,6 +151,31 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+<<<<<<< Updated upstream
+=======
+
+
+                        composable("household") {
+                            HouseholdScreenUi(
+                                navController = navController
+                            )
+                        }
+
+                        composable("stores") {
+                            StoreListScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+
+
+                        composable("settings") {
+                            SettingsScreen(
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+
+
+>>>>>>> Stashed changes
                         composable("listInfo/{listId}") { backStackEntry ->
                             val listId = backStackEntry.arguments?.getString("listId") ?: return@composable
 
