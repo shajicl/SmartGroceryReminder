@@ -91,14 +91,12 @@ class AuthViewModel(
                     if (task.isSuccessful) {
                         val user = auth.currentUser
 
-                        // ✅ This is what makes the name appear in Firebase Authentication console
                         val profileUpdates = UserProfileChangeRequest.Builder()
                             .setDisplayName(name)
                             .build()
 
                         user?.updateProfile(profileUpdates)
 
-                        // (Optional) if later you use Firestore, you can also save householdId there
 
                         uiState.value = uiState.value.copy(
                             isLoading = false,
