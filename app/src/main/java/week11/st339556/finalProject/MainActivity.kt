@@ -17,12 +17,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 import week11.st339556.finalProject.auth.ForgotPasswordScreen
 import week11.st339556.finalProject.auth.LoginScreenUi   // <— your login screen
 import week11.st339556.finalProject.auth.SignUpScreen
+import week11.st339556.finalProject.data.HouseholdRepository
 import week11.st339556.finalProject.home.HomeScreenUi
+import week11.st339556.finalProject.household.HouseholdScreenUi
 import week11.st339556.finalProject.lists.CreateListScreenUi
 import week11.st339556.finalProject.lists.ListInfoScreenUi
 import week11.st339556.finalProject.lists.MyListsRoute
-import week11.st339556.finalProject.settings.SettingsScreen
-
+import week11.st339556.finalProject.lists.Priority
+import week11.st339556.finalProject.model.Household
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 import week11.st339556.finalProject.ui.theme.SmartGroceryReminderTheme
 // ^ change the theme name if your template used a different one
@@ -70,27 +74,61 @@ class MainActivity : ComponentActivity() {
                                 onMyListsClick = {
                                     navController.navigate("myLists")
                                 },
-<<<<<<< Updated upstream
-                                onHouseholdClick = { /* TODO */ },
+                                onHouseholdClick = { navController.navigate("household") },
                                 onStoresClick = { /* TODO */ },
                                 onSettingsClick = { /* TODO */ },
 =======
                                 onHouseholdClick = { navController.navigate("household") },
                                 onStoresClick = { navController.navigate("stores")},
                                 onSettingsClick = { navController.navigate("settings") },
->>>>>>> Stashed changes
+
                                 onViewProfileClick = { /* TODO */ }
+                            )
+                        }
+
+                        composable("myLists") {
+                            MyListsRoute(
+                                onBackClick = { navController.popBackStack() },
+                                onOpenList = { list ->
+                                    // Handle opening a list
+                                },
+                                onEditList = { list ->
+                                    // Navigate to edit screen
+                                    navController.navigate("editList/${list.id}")
+                                },
+                                onHouseholdTabClick = {
+                                    navController.navigate("household")
+                                }
                             )
                         }
 
                         composable("createList") {
                             val context = LocalContext.current
-                            val db = FirebaseFirestore.getInstance()
                             val auth = FirebaseAuth.getInstance()
+                            val householdRepository = remember { HouseholdRepository() }
+                            val coroutineScope = rememberCoroutineScope()
+
+                            val currentUser = auth.currentUser
+                            val userId = currentUser?.uid ?: ""
+
+                            // State for households and selected household
+                            var households by remember { mutableStateOf<List<Household>>(emptyList()) }
+                            var selectedHousehold by remember { mutableStateOf<Household?>(null) }
+                            var dropdownExpanded by remember { mutableStateOf(false) }
+
+                            // Load user's households
+                            LaunchedEffect(userId) {
+                                if (userId.isNotEmpty()) {
+                                    householdRepository.getUserHouseholds(userId).collect { householdList ->
+                                        households = householdList
+                                    }
+                                }
+                            }
 
                             CreateListScreenUi(
                                 onBackClick = { navController.popBackStack() },
-                                onCreateListClick = { listName, household, items, priority, dueDate ->
+                                onCreateListClick = { listName, _, items, priority, dueDate ->
+                                    // Note: The second parameter (_) is the manual input which we're no longer using
 
                                     val user = auth.currentUser
                                     if (user == null) {
@@ -104,20 +142,37 @@ class MainActivity : ComponentActivity() {
                                         return@CreateListScreenUi
                                     }
 
+                                    // Get household ID if selected, otherwise null for personal list
+                                    val householdId = selectedHousehold?.id ?: ""
+                                    val householdName = selectedHousehold?.householdName ?: ""
+
                                     val listData = hashMapOf(
                                         "userId" to user.uid,
                                         "name" to listName,
-                                        "household" to household,
-                                        "items" to items, // List<String>
-                                        "priority" to priority, // "Low"/"Medium"/"High"
-                                        "dueDate" to (dueDate ?: "")
+                                        "householdId" to householdId,
+                                        "householdName" to householdName,
+                                        "items" to items,
+                                        "priority" to priority,
+                                        "dueDate" to (dueDate ?: ""),
+                                        "createdAt" to com.google.firebase.Timestamp.now(),
+                                        "isCompleted" to false
                                     )
 
-                                    db.collection("lists")
+                                    FirebaseFirestore.getInstance()
+                                        .collection("lists")
                                         .add(listData)
-                                        .addOnSuccessListener {
+                                        .addOnSuccessListener { documentReference ->
+                                            // If a household is selected, also add the list to the household's groceryListIds
+                                            if (selectedHousehold != null) {
+                                                coroutineScope.launch {  // 🔹 FIX: Call suspend function in coroutine
+                                                    householdRepository.addGroceryListToHousehold(
+                                                        selectedHousehold!!.id,
+                                                        documentReference.id
+                                                    )
+                                                }
+                                            }
+
                                             Toast.makeText(context, "List created", Toast.LENGTH_SHORT).show()
-                                            // go to My Lists after success
                                             navController.navigate("myLists") {
                                                 popUpTo("home") { inclusive = false }
                                             }
@@ -130,29 +185,28 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("myLists")
                                 },
                                 onHouseholdTabClick = {
-                                    // later
+                                    navController.navigate("household")
+                                },
+                                // Pass households data to UI
+                                households = households.map { it.householdName } as List<String>,
+                                selectedHousehold = selectedHousehold?.householdName ?: "Personal List",
+                                onHouseholdSelected = { householdName ->
+                                    selectedHousehold = households.find { it.householdName == householdName }
+                                },
+                                dropdownExpanded = dropdownExpanded,
+                                onDropdownExpandedChange = { expanded ->
+                                    dropdownExpanded = expanded
                                 }
                             )
                         }
-
-                        composable("myLists") {
-                            MyListsRoute(
-                                onBackClick = { navController.popBackStack() },
-                                onOpenList = { list ->
-                                    // open in read-only or edit screen
-                                    navController.navigate("listInfo/${list.id}")
-                                },
-                                onEditList = { list ->
-                                    navController.navigate("listInfo/${list.id}")
-                                },
-                                onHouseholdTabClick = {
-                                    // later
-                                }
+                        composable("household") {
+                            HouseholdScreenUi(
+                                navController = navController
                             )
                         }
 
-<<<<<<< Updated upstream
-=======
+
+
 
 
                         composable("household") {
@@ -175,7 +229,6 @@ class MainActivity : ComponentActivity() {
                         }
 
 
->>>>>>> Stashed changes
                         composable("listInfo/{listId}") { backStackEntry ->
                             val listId = backStackEntry.arguments?.getString("listId") ?: return@composable
 

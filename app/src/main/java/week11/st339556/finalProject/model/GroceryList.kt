@@ -8,7 +8,6 @@ data class GroceryList (
     val priority: Priority = Priority.LOW,
     val householdId: String? = null,
 
-    //TODO -maybe consider adding date to buy items (due date??)
 
     @DocumentId
     val groceryListId: String = ""

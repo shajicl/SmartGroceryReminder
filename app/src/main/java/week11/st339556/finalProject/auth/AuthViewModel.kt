@@ -110,25 +110,9 @@ class AuthViewModel(
                     createNewHousehold(user.uid, name)
                 }
 
-                // 4. Save user info to Firestore
-                saveUserToFirestore(user.uid, name, email, finalHouseholdId)
-
-                uiState.value = uiState.value.copy(
-                    isLoading = false,
-                    isLoginSuccessful = true,
-                    errorMessage = null,
-                    householdId = finalHouseholdId
-                )
-
-            } catch (e: Exception) {
-                uiState.value = uiState.value.copy(
-                    isLoading = false,
-                    isLoginSuccessful = false,
-                    errorMessage = e.localizedMessage ?: "Registration failed"
-                )
-            }
-        }
-    }
+                        val profileUpdates = UserProfileChangeRequest.Builder()
+                            .setDisplayName(name)
+                            .build()
 
     // FIXED: Proper Firestore update for joining household
     private suspend fun joinExistingHousehold(userId: String, householdId: String): String {
@@ -136,9 +120,6 @@ class AuthViewModel(
             // Fetch the household document
             val householdDoc = db.collection("households").document(householdId).get().await()
 
-            if (!householdDoc.exists()) {
-                throw Exception("Household not found. Please check the ID.")
-            }
 
             // Get current userIds - handle different possible types
             val currentUserIds: List<String> = when (val field = householdDoc.get("userIds")) {
