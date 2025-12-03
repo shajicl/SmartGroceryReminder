@@ -21,14 +21,6 @@ class HouseholdViewModel : ViewModel() {
         observeHouseholds()
     }
 
-    private fun observeHouseholds() {
-        viewModelScope.launch {
-            repo.getAllHouseholds().collect { list ->
-                _households.value = list
-            }
-        }
-    }
-
     fun addHousehold(household: Household) {
         viewModelScope.launch {
             _message.value = repo.addHousehold(household)
@@ -46,6 +38,18 @@ class HouseholdViewModel : ViewModel() {
             _message.value = repo.deleteHousehold(householdId)
         }
     }
+
+    private fun observeHouseholds() {
+        viewModelScope.launch {
+            val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            if (userId != null) {
+                repo.getUserHouseholds(userId).collect { list ->
+                    _households.value = list
+                }
+            }
+        }
+    }
+
 
     fun clearMessage() {
         _message.value = null

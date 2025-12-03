@@ -158,7 +158,7 @@ private fun ListSummaryCard(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
-        onClick = { onClick() }
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
@@ -191,13 +191,24 @@ private fun ListSummaryCard(
                 color = Color.Gray
             )
 
+            // Show household if exists
+            if (!list.householdName.isNullOrBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Household: ${list.householdName}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF8E44FF)
+                )
+            }
+
             Spacer(Modifier.height(10.dp))
 
-            // Row 3: avatars + member count (optional)
+            // Row 3: Member avatars (only show if there are members)
             if (list.members.isNotEmpty()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Display member avatars (max 3 with overlap)
                     Row {
                         list.members.take(3).forEachIndexed { index, member ->
                             Box(
@@ -210,9 +221,28 @@ private fun ListSummaryCard(
                             ) {
                                 Text(
                                     text = member.initials,
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     color = Color.White,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        // Show +X if there are more than 3 members
+                        if (list.members.size > 3) {
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = (-8 * 3).dp)
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "+${list.members.size - 3}",
+                                    fontSize = 10.sp,
+                                    color = Color.DarkGray,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -220,8 +250,9 @@ private fun ListSummaryCard(
 
                     Spacer(Modifier.width(12.dp))
 
+                    // Member count text
                     Text(
-                        text = "${list.members.size} members",
+                        text = "${list.members.size} member${if (list.members.size != 1) "s" else ""}",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
@@ -258,7 +289,6 @@ private fun ListSummaryCard(
         }
     }
 }
-
 @Composable
 private fun PriorityChip(priority: Priority) {
     val (bg, text, label) = when (priority) {
