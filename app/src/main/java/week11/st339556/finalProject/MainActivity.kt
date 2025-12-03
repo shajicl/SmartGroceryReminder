@@ -75,9 +75,9 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("myLists")
                                 },
                                 onHouseholdClick = { navController.navigate("household") },
-                                onStoresClick = { /* TODO */ },
+                                onStoresClick = { navController.navigate("stores")},
                                 onSettingsClick = { /* TODO */ },
-=======
+
                                 onHouseholdClick = { navController.navigate("household") },
                                 onStoresClick = { navController.navigate("stores")},
                                 onSettingsClick = { navController.navigate("settings") },
@@ -206,6 +206,24 @@ class MainActivity : ComponentActivity() {
                         }
 
 
+
+
+
+                        composable("myLists") {
+                            MyListsRoute(
+                                onBackClick = { navController.popBackStack() },
+                                onOpenList = { list ->
+                                    navController.navigate("listInfo/${list.id}")
+                                },
+                                onEditList = { list ->
+                                    // For now, navigate to list info which can handle editing
+                                    navController.navigate("listInfo/${list.id}")
+                                },
+                                onHouseholdTabClick = {
+                                    navController.navigate("household")
+                                }
+                            )
+                        }
 
 
 
