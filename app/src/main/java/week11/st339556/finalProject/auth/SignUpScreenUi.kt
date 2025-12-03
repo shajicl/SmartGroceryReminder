@@ -4,18 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +16,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import week11.st339556.finalProject.model.Household
+import week11.st339556.finalProject.model.HouseholdViewModel
 
 // Same purple theme as Login / Forgot Password
 private val PurpleMain = Color(0xFF8E44FF)
@@ -34,7 +28,7 @@ private val TextFieldBg = Color(0xFFF5F5F5)
 
 @Composable
 fun SignUpScreenUi(
-    onCreateAccountClick: (name: String, email: String, password: String, householdId: String?) -> Unit = { _, _, _, _ -> },
+    onSignUpSuccess: (userId: String, householdId: String) -> Unit = { _, _ -> },
     onSignInClick: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
@@ -42,12 +36,17 @@ fun SignUpScreenUi(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var householdId by remember { mutableStateOf("") }
+    var householdName by remember { mutableStateOf("") }
 
     // per-field error messages
     var nameError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
+
+    // ViewModel for household operations
+    val householdViewModel: HouseholdViewModel = viewModel()
+    val coroutineScope = rememberCoroutineScope()
 
     fun validate(): Boolean {
         var hasError = false
@@ -59,7 +58,7 @@ fun SignUpScreenUi(
         if (email.isBlank()) {
             emailError = "Email is required"
             hasError = true
-        } else if (!email.contains("@") || !email.contains(".")) {
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             emailError = "Enter a valid email"
             hasError = true
         }
@@ -75,10 +74,49 @@ fun SignUpScreenUi(
         return !hasError
     }
 
+    fun handleSignUp() {
+        if (validate()) {
+            // Here you would normally:
+            // 1. Create user with Firebase Auth
+            // 2. Create household for the user
+            // 3. Call onSignUpSuccess with user ID and household ID
+
+            // For now, let's simulate user creation and household creation
+            coroutineScope.launch {
+                // Simulate user creation (in real app, this would be Firebase Auth)
+                val simulatedUserId = "user_${System.currentTimeMillis()}"
+
+                // Create household
+                val household = if (householdId.isNotBlank()) {
+                    // Join existing household (you'd need to verify it exists)
+                    Household(
+                        householdName = "Joined Household", // You'd fetch this name
+                        userIds = listOf(simulatedUserId),
+                        creatorId = simulatedUserId
+                    )
+                } else {
+                    // Create new household
+                    val newHouseholdName = if (householdName.isNotBlank()) householdName else "$name's Household"
+                    Household(
+                        householdName = newHouseholdName,
+                        userIds = listOf(simulatedUserId),
+                        creatorId = simulatedUserId
+                    )
+                }
+
+                // Add household using your repository
+                householdViewModel.addHousehold(household)
+
+                // Call success callback (in real app, wait for household to be created)
+                onSignUpSuccess(simulatedUserId, household.id)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PurpleLightBg), // light purple background
+            .background(PurpleLightBg),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -291,59 +329,125 @@ fun SignUpScreenUi(
 
                 Spacer(Modifier.height(12.dp))
 
-                // ----- Household ID (Optional) -----
-                Text(
-                    text = "Household ID (Optional)",
+                // ----- Household Options -----
+                var joinExisting by remember { mutableStateOf(false) }
+
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    style = TextStyle(
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    textAlign = TextAlign.Start
-                )
-                TextField(
-                    value = householdId,
-                    onValueChange = { householdId = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("Leave empty to create new household") },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = TextFieldBg,
-                        unfocusedContainerColor = TextFieldBg,
-                        focusedIndicatorColor = PurpleMain,
-                        unfocusedIndicatorColor = Color.Transparent
+                    colors = CardDefaults.cardColors(
+                        containerColor = PurpleLightBg.copy(alpha = 0.3f)
                     )
-                )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Household Setup",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PurpleMain
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                Spacer(Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "Enter an existing household ID to join, or leave blank to create a new one",
-                    style = TextStyle(
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    ),
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            FilterChip(
+                                selected = !joinExisting,
+                                onClick = { joinExisting = false },
+                                label = { Text("Create New") }
+                            )
+                            FilterChip(
+                                selected = joinExisting,
+                                onClick = { joinExisting = true },
+                                label = { Text("Join Existing") }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (joinExisting) {
+                            // Join existing household
+                            Text(
+                                text = "Household ID",
+                                modifier = Modifier.fillMaxWidth(),
+                                style = TextStyle(
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Start
+                            )
+                            TextField(
+                                value = householdId,
+                                onValueChange = { householdId = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                placeholder = { Text("Enter household ID") },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.White,
+                                    unfocusedContainerColor = Color.White,
+                                    focusedIndicatorColor = PurpleMain,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                )
+                            )
+                            Text(
+                                text = "Ask your household admin for the ID",
+                                style = TextStyle(
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                ),
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            // Create new household
+                            Text(
+                                text = "Household Name",
+                                modifier = Modifier.fillMaxWidth(),
+                                style = TextStyle(
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Start
+                            )
+                            TextField(
+                                value = householdName,
+                                onValueChange = { householdName = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                placeholder = { Text("e.g., Smith Family Home") },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.White,
+                                    unfocusedContainerColor = Color.White,
+                                    focusedIndicatorColor = PurpleMain,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                )
+                            )
+                            Text(
+                                text = "You can change this later",
+                                style = TextStyle(
+                                    fontSize = 11.sp,
+                                    color = Color.Gray
+                                ),
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(16.dp))
 
                 // ----- Create Account button -----
                 Button(
-                    onClick = {
-                        // only proceed if validation passes
-                        // (no field errors)
-                        if (validate()) {
-                            onCreateAccountClick(
-                                name,
-                                email,
-                                password,
-                                householdId.ifBlank { null }
-                            )
-                        }
-                    },
+                    onClick = { handleSignUp() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -388,4 +492,3 @@ fun SignUpScreenUi(
         }
     }
 }
-
