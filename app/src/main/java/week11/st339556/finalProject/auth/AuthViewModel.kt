@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import week11.st339556.finalProject.model.Household
@@ -18,6 +19,10 @@ class AuthViewModel(
 
     var uiState = androidx.compose.runtime.mutableStateOf(AuthUiState())
         private set
+
+    /* ---------------------------------------------------------
+     * INPUT HANDLERS
+     * --------------------------------------------------------- */
 
     fun onEmailChange(newEmail: String) {
         uiState.value = uiState.value.copy(email = newEmail, errorMessage = null)
@@ -46,6 +51,10 @@ class AuthViewModel(
         return true
     }
 
+    /* ---------------------------------------------------------
+     * LOGIN
+     * --------------------------------------------------------- */
+
     fun login() {
         if (!validateInputs(isLogin = true)) return
 
@@ -60,20 +69,21 @@ class AuthViewModel(
                     if (task.isSuccessful) {
                         uiState.value = uiState.value.copy(
                             isLoading = false,
-                            isLoginSuccessful = true,
-                            errorMessage = null
+                            isLoginSuccessful = true
                         )
                     } else {
                         uiState.value = uiState.value.copy(
                             isLoading = false,
-                            isLoginSuccessful = false,
-                            errorMessage = task.exception?.localizedMessage
-                                ?: "Login failed"
+                            errorMessage = task.exception?.localizedMessage ?: "Login failed"
                         )
                     }
                 }
         }
     }
+
+    /* ---------------------------------------------------------
+     * REGISTER
+     * --------------------------------------------------------- */
 
     fun register(name: String, householdId: String?) {
         if (name.isBlank()) {
@@ -101,61 +111,67 @@ class AuthViewModel(
 
                 user.updateProfile(profileUpdates).await()
 
-                // 3. Create or join household
-                val finalHouseholdId = if (householdId != null && householdId.isNotBlank()) {
-                    // Join existing household
-                    joinExistingHousehold(user.uid, householdId)
-                } else {
-                    // Create new household
-                    createNewHousehold(user.uid, name)
-                }
+                // 3. Create/join household
+                val finalHouseholdId =
+                    if (!householdId.isNullOrBlank()) {
+                        joinExistingHousehold(user.uid, householdId)
+                    } else {
+                        createNewHousehold(user.uid, name)
+                    }
 
-                        val profileUpdates = UserProfileChangeRequest.Builder()
-                            .setDisplayName(name)
-                            .build()
+                // 4. Save user to Firestore
+                saveUserToFirestore(user.uid, name, email, finalHouseholdId)
 
-    // FIXED: Proper Firestore update for joining household
+                uiState.value = uiState.value.copy(
+                    isLoading = false,
+                    isLoginSuccessful = true
+                )
+
+            } catch (e: Exception) {
+                uiState.value = uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Registration failed"
+                )
+            }
+        }
+    }
+
+    /* ---------------------------------------------------------
+     * FIRESTORE HELPERS
+     * --------------------------------------------------------- */
+
     private suspend fun joinExistingHousehold(userId: String, householdId: String): String {
         return try {
-            // Fetch the household document
             val householdDoc = db.collection("households").document(householdId).get().await()
 
-
-            // Get current userIds - handle different possible types
             val currentUserIds: List<String> = when (val field = householdDoc.get("userIds")) {
                 is List<*> -> field.filterIsInstance<String>()
                 is ArrayList<*> -> field.filterIsInstance<String>()
                 else -> emptyList()
             }
 
-            // Create new list with added user
             val updatedUserIds = currentUserIds.toMutableList().apply {
-                if (!contains(userId)) {
-                    add(userId)
-                }
+                if (!contains(userId)) add(userId)
             }
 
-            // Update household with new user
-            // Use set() with merge instead of update() to avoid type issues
             db.collection("households").document(householdId).set(
                 mapOf(
                     "userIds" to updatedUserIds,
                     "updatedAt" to com.google.firebase.Timestamp.now()
                 ),
-                com.google.firebase.firestore.SetOptions.merge()
+                SetOptions.merge()
             ).await()
 
             householdId
 
         } catch (e: Exception) {
-            // If joining fails, create a new household instead
             createNewHousehold(userId, "My Household")
         }
     }
 
-    // Helper function to create new household
     private suspend fun createNewHousehold(userId: String, name: String): String {
-        val householdName = if (name.isNotBlank()) "$name's Household" else "My Household"
+        val householdName =
+            if (name.isNotBlank()) "${name}'s Household" else "My Household"
 
         val household = Household(
             householdName = householdName,
@@ -163,14 +179,10 @@ class AuthViewModel(
             creatorId = userId
         )
 
-        // Add household to Firestore
         val docRef = db.collection("households").add(household).await()
-
-        // Return the created household ID
         return docRef.id
     }
 
-    // Save user info to Firestore for easier queries
     private suspend fun saveUserToFirestore(
         userId: String,
         name: String,
@@ -187,6 +199,10 @@ class AuthViewModel(
         db.collection("users").document(userId).set(userData).await()
     }
 
+    /* ---------------------------------------------------------
+     * PASSWORD RESET
+     * --------------------------------------------------------- */
+
     fun sendPasswordReset(onEmailSent: () -> Unit) {
         val email = uiState.value.email.trim()
         if (email.isBlank()) {
@@ -194,11 +210,12 @@ class AuthViewModel(
             return
         }
 
-        uiState.value = uiState.value.copy(isLoading = true, errorMessage = null)
+        uiState.value = uiState.value.copy(isLoading = true)
 
         auth.sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->
                 uiState.value = uiState.value.copy(isLoading = false)
+
                 if (task.isSuccessful) {
                     onEmailSent()
                 } else {
@@ -209,6 +226,10 @@ class AuthViewModel(
                 }
             }
     }
+
+    /* ---------------------------------------------------------
+     * UTILITY
+     * --------------------------------------------------------- */
 
     fun clearLoginSuccessFlag() {
         uiState.value = uiState.value.copy(isLoginSuccessful = false)

@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.runtime)
     //implementation(libs.firebase.firestore.ktx)
     //implementation(libs.firebase.auth.ktx)
     testImplementation(libs.junit)

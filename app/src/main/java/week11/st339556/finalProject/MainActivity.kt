@@ -7,6 +7,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
@@ -26,7 +30,11 @@ import week11.st339556.finalProject.lists.MyListsRoute
 import week11.st339556.finalProject.lists.Priority
 import week11.st339556.finalProject.model.Household
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import week11.st339556.finalProject.auth.SignUpScreenUi
+import week11.st339556.finalProject.grocery.StoreListScreen
+import week11.st339556.finalProject.settings.SettingsScreen
 
 import week11.st339556.finalProject.ui.theme.SmartGroceryReminderTheme
 // ^ change the theme name if your template used a different one
@@ -57,9 +65,17 @@ class MainActivity : ComponentActivity() {
 
                         // Sign up
                         composable("signup") {
-                            SignUpScreen(navController = navController)
-
+                            SignUpScreenUi(
+                                onSignUpSuccess = { userId, householdId ->
+                                    // Your navigation after signup
+                                    navController.navigate("home")
+                                },
+                                onSignInClick = {
+                                    navController.navigate("login")
+                                }
+                            )
                         }
+
 
                         // Forgot password
                         composable("forgotPassword") {
@@ -75,12 +91,10 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("myLists")
                                 },
                                 onHouseholdClick = { navController.navigate("household") },
-                                onStoresClick = { /* TODO */ },
-                                onSettingsClick = { /* TODO */ },
-=======
-                                onHouseholdClick = { navController.navigate("household") },
                                 onStoresClick = { navController.navigate("stores")},
-                                onSettingsClick = { navController.navigate("settings") },
+                                onSettingsClick = { /* TODO */ },
+
+
 
                                 onViewProfileClick = { /* TODO */ }
                             )
@@ -206,6 +220,24 @@ class MainActivity : ComponentActivity() {
                         }
 
 
+
+
+
+                        composable("myLists") {
+                            MyListsRoute(
+                                onBackClick = { navController.popBackStack() },
+                                onOpenList = { list ->
+                                    navController.navigate("listInfo/${list.id}")
+                                },
+                                onEditList = { list ->
+                                    // For now, navigate to list info which can handle editing
+                                    navController.navigate("listInfo/${list.id}")
+                                },
+                                onHouseholdTabClick = {
+                                    navController.navigate("household")
+                                }
+                            )
+                        }
 
 
 
