@@ -6,10 +6,11 @@ import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import week11.st339556.finalProject.model.Household
 
-class HouseholdRepository {
+class HouseholdRepository  {
 
     private val db = FirebaseFirestore.getInstance()
     private val householdRef = db.collection("households")
@@ -32,62 +33,55 @@ class HouseholdRepository {
                     else -> emptyList()
                 }
 
-                Household(
-                    householdName = document.getString("householdName") ?: "",
-                    userIds = userIds,
-                    creatorId = document.getString("creatorId") ?: "",
-                    groceryListIds = groceryListIds,
-                    createdAt = document.getTimestamp("createdAt"),
-                    updatedAt = document.getTimestamp("updatedAt"),
-                    id = document.id // Firestore document ID
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
-    }
-
-    // Add current user ID to household
+    // Add a new household
     suspend fun addHousehold(household: Household): String {
         return try {
-            val currentUser = auth.currentUser
-            if (currentUser == null) {
-                return "User not authenticated"
-            }
-
-            // Create household with creator information
-            val householdToAdd = household.copy(
-                creatorId = currentUser.uid,
-                userIds = if (!household.userIds.contains(currentUser.uid)) {
-                    household.userIds + currentUser.uid
-                } else {
-                    household.userIds
-                }
-            )
-
-            val docRef = householdRef.add(householdToAdd).await()
+            val docRef = householdRef.add(household).await()
             docRef.id
         } catch (e: Exception) {
             "Could not create household: ${e.localizedMessage}"
         }
     }
 
-    // List all households - using safe converter
+    // Get all households (admin purposes)
     fun getAllHouseholds(): Flow<List<Household>> = callbackFlow {
         val listener = householdRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                // Send empty list on error
                 trySend(emptyList())
                 return@addSnapshotListener
             }
-            val list = snapshot?.toHouseholdList() ?: emptyList()
+            val list = snapshot?.toObjects(Household::class.java) ?: emptyList()
             trySend(list)
         }
         awaitClose { listener.remove() }
     }
 
-    // Update households - check if user is member
+    // Get households for a specific user
+    fun getUserHouseholds(userId: String): Flow<List<Household>> = callbackFlow {
+        val listener = householdRef
+            .whereArrayContains("userIds", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                val households = snapshot?.toObjects(Household::class.java) ?: emptyList()
+                trySend(households)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    // Get a single household by ID
+    suspend fun getHouseholdById(householdId: String): Household? {
+        return try {
+            val snapshot = householdRef.document(householdId).get().await()
+            snapshot.toObject(Household::class.java)?.copy(id = householdId)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Update household
     suspend fun updateHousehold(household: Household): String {
         return try {
             val currentUser = auth.currentUser
@@ -183,22 +177,28 @@ class HouseholdRepository {
         }
     }
 
-    // Ensure at least one household exists; returns the user's first household or creates one
+    // Ensure user has at least one household (create default if not)
     suspend fun ensureUserHousehold(userId: String): Household? {
         return try {
             // Get all households where the userId is in the userIds list
-            val snapshot = householdRef.whereArrayContains("userIds", userId).get().await()
-            val households = snapshot.toHouseholdList()
+            val snapshot = householdRef
+                .whereArrayContains("userIds", userId)
+                .limit(1)
+                .get()
+                .await()
+
+            val households = snapshot.toObjects(Household::class.java)
 
             if (households.isNotEmpty()) {
-                households.first()
+                households.first().copy(id = snapshot.documents.first().id)
             } else {
                 // No household found for this user, create a default one
                 val newHousehold = Household(
+                    id = "", // Will be set by Firestore
                     householdName = "My Household",
                     userIds = listOf(userId),
-                    creatorId = userId,
-                    groceryListIds = emptyList()
+                    groceryListIds = emptyList(),
+                    creatorId = userId
                 )
                 val docRef = householdRef.add(newHousehold).await()
                 newHousehold.copy(id = docRef.id)
@@ -208,18 +208,117 @@ class HouseholdRepository {
         }
     }
 
-    // Get user households using safe converter
-    fun getUserHouseholds(userId: String): Flow<List<Household>> = callbackFlow {
-        val listener = householdRef
-            .whereArrayContains("userIds", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(emptyList())
-                    return@addSnapshotListener
-                }
-                val list = snapshot?.toHouseholdList() ?: emptyList()
-                trySend(list)
+    // Add a user to a household
+    suspend fun addUserToHousehold(householdId: String, userId: String): String {
+        return try {
+            val household = getHouseholdById(householdId)
+            if (household == null) {
+                return "Household not found"
             }
-        awaitClose { listener.remove() }
+
+            if (household.userIds.contains(userId)) {
+                return "User already in household"
+            }
+
+            val updatedUserIds = household.userIds.toMutableList().apply {
+                add(userId)
+            }
+
+            householdRef.document(householdId)
+                .update("userIds", updatedUserIds)
+                .await()
+
+            "User added to household"
+        } catch (e: Exception) {
+            "Could not add user to household: ${e.localizedMessage}"
+        }
+    }
+
+    // Remove a user from a household
+    suspend fun removeUserFromHousehold(householdId: String, userId: String): String {
+        return try {
+            val household = getHouseholdById(householdId)
+            if (household == null) {
+                return "Household not found"
+            }
+
+            if (!household.userIds.contains(userId)) {
+                return "User not in household"
+            }
+
+            val updatedUserIds = household.userIds.toMutableList().apply {
+                remove(userId)
+            }
+
+            householdRef.document(householdId)
+                .update("userIds", updatedUserIds)
+                .await()
+
+            "User removed from household"
+        } catch (e: Exception) {
+            "Could not remove user from household: ${e.localizedMessage}"
+        }
+    }
+
+    // Check if user can delete household (only creator can delete)
+    suspend fun canUserDeleteHousehold(householdId: String, userId: String): Boolean {
+        return try {
+            val household = getHouseholdById(householdId)
+            household?.creatorId == userId
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // Add a grocery list to household
+    suspend fun addGroceryListToHousehold(householdId: String, listId: String): String {
+        return try {
+            val household = getHouseholdById(householdId)
+            if (household == null) {
+                return "Household not found"
+            }
+
+            if (household.groceryListIds.contains(listId)) {
+                return "List already in household"
+            }
+
+            val updatedListIds = household.groceryListIds.toMutableList().apply {
+                add(listId)
+            }
+
+            householdRef.document(householdId)
+                .update("groceryListIds", updatedListIds)
+                .await()
+
+            "List added to household"
+        } catch (e: Exception) {
+            "Could not add list to household: ${e.localizedMessage}"
+        }
+    }
+
+    // Remove a grocery list from household
+    suspend fun removeGroceryListFromHousehold(householdId: String, listId: String): String {
+        return try {
+            val household = getHouseholdById(householdId)
+            if (household == null) {
+                return "Household not found"
+            }
+
+            if (!household.groceryListIds.contains(listId)) {
+                return "List not in household"
+            }
+
+            val updatedListIds = household.groceryListIds.toMutableList().apply {
+                remove(listId)
+            }
+
+            householdRef.document(householdId)
+                .update("groceryListIds", updatedListIds)
+                .await()
+
+            "List removed from household"
+        } catch (e: Exception) {
+            "Could not remove list from household: ${e.localizedMessage}"
+        }
     }
 }

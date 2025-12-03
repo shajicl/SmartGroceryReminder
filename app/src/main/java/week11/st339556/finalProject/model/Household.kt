@@ -9,6 +9,8 @@ data class Household(
     val userIds: List<String> = emptyList(),
     val creatorId: String = "",
     val groceryListIds: List<String> = emptyList(),
+    val creatorId: String = "",
+    val createdAt: String = "" ,
 
     @ServerTimestamp
     val createdAt: Timestamp? = null,
