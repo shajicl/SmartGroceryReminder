@@ -155,10 +155,12 @@ fun SignUpScreenUi(
 
                 val userId = firebaseUser.uid
 
+
                 // Save basic user profile
                 val userData = mapOf(
                     "uid" to userId,
                     "name" to name,
+                    "displayName" to name,   // 👈 added
                     "email" to email,
                     "createdAt" to com.google.firebase.Timestamp.now()
                 )

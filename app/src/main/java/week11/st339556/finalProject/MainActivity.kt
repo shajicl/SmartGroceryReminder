@@ -92,11 +92,20 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onHouseholdClick = { navController.navigate("household") },
                                 onStoresClick = { navController.navigate("stores")},
-                                onSettingsClick = { /* TODO */ },
+                                onSettingsClick = { navController.navigate("settings")},
 
 
 
-                                onViewProfileClick = { /* TODO */ }
+                                onViewProfileClick = { /* TODO */ },
+                                onLogoutClick = {
+
+                                    // 2) go back to login and clear back stack
+                                    navController.navigate("login") {
+                                        popUpTo("home") { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                }
+
                             )
                         }
 
@@ -213,11 +222,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("household") {
-                            HouseholdScreenUi(
-                                navController = navController
-                            )
-                        }
+
 
 
 
@@ -242,10 +247,9 @@ class MainActivity : ComponentActivity() {
 
 
                         composable("household") {
-                            HouseholdScreenUi(
-                                navController = navController
-                            )
+                            HouseholdScreenUi(navController = navController)
                         }
+
 
                         composable("stores") {
                             StoreListScreen(

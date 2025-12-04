@@ -37,7 +37,8 @@ fun HomeScreenUi(
     onHouseholdClick: () -> Unit = {},
     onStoresClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    onViewProfileClick: () -> Unit = {}
+    onViewProfileClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {}     // <-- NEW callback
 ) {
     // Outer light purple background
     Box(
@@ -53,7 +54,7 @@ fun HomeScreenUi(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF7F3FF) // very light purple like the mock
+                containerColor = Color(0xFFF7F3FF)
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -64,7 +65,7 @@ fun HomeScreenUi(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Title + subtitle
+                // ------- Title -------
                 Text(
                     text = "Family Organizer",
                     style = TextStyle(
@@ -82,7 +83,7 @@ fun HomeScreenUi(
 
                 Spacer(Modifier.height(24.dp))
 
-                // -------- Create New List button (full width, purple) --------
+                // -------- Create New List --------
                 Button(
                     onClick = onCreateNewListClick,
                     modifier = Modifier
@@ -90,7 +91,7 @@ fun HomeScreenUi(
                         .height(50.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8E44FF)   // same purple as login
+                        containerColor = Color(0xFF8E44FF)
                     )
                 ) {
                     Icon(
@@ -108,7 +109,7 @@ fun HomeScreenUi(
 
                 Spacer(Modifier.height(24.dp))
 
-                // -------- 2x2 grid of feature cards --------
+                // -------- Feature Grid --------
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -150,7 +151,7 @@ fun HomeScreenUi(
 
                 Spacer(Modifier.height(24.dp))
 
-                // -------- View profile link at bottom --------
+                // -------- View Profile --------
                 Text(
                     text = "View Profile",
                     modifier = Modifier.clickable { onViewProfileClick() },
@@ -161,6 +162,33 @@ fun HomeScreenUi(
                     ),
                     textAlign = TextAlign.Center
                 )
+
+                Spacer(Modifier.height(18.dp))
+
+                // -------- LOGOUT BUTTON (purple outline) --------
+                Button(
+                    onClick = onLogoutClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(45.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        width = 1.dp,
+                        brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                            listOf(Color(0xFF8E44FF), Color(0xFF8E44FF))
+                        )
+                    )
+                ) {
+                    Text(
+                        text = "Logout",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF8E44FF)
+                    )
+                }
             }
         }
     }

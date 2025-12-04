@@ -114,31 +114,7 @@ fun MyListsScreen(
                     }
                 }
 
-                // ---- Bottom nav ----
-                Divider(color = Color(0xFFE1E1E1))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .background(Color.White),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    BottomNavItem(
-                        label = "My Lists",
-                        icon = Icons.Outlined.List,
-                        selected = true,
-                        onClick = onMyListsTabClick,
-                        selectedColor = purple
-                    )
-                    BottomNavItem(
-                        label = "Household",
-                        icon = Icons.Outlined.People,
-                        selected = false,
-                        onClick = onHouseholdTabClick,
-                        selectedColor = purple
-                    )
-                }
+
             }
         }
     }
@@ -313,31 +289,3 @@ private fun PriorityChip(priority: Priority) {
     }
 }
 
-@Composable
-private fun BottomNavItem(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    selectedColor: Color
-) {
-    val textColor = if (selected) selectedColor else Color.Gray
-
-    Column(
-        modifier = Modifier
-            .clickable { onClick() }
-            .padding(vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = textColor
-        )
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            color = textColor
-        )
-    }
-}

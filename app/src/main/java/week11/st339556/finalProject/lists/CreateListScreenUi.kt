@@ -459,61 +459,8 @@ fun CreateListScreenUi(
 
                 Spacer(Modifier.height(8.dp))
 
-                // ---------- Bottom Navigation (My Lists / Household) ----------
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    BottomTabItem(
-                        label = "My Lists",
-                        icon = Icons.Default.List,
-                        isSelected = true,
-                        onClick = onMyListsTabClick
-                    )
-                    BottomTabItem(
-                        label = "Household",
-                        icon = Icons.Default.People,
-                        isSelected = false,
-                        onClick = onHouseholdTabClick
-                    )
-                }
+
             }
         }
-    }
-}
-
-@Composable
-fun BottomTabItem(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val accentPurple = Color(0xFF8E44FF)
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = if (isSelected) accentPurple else Color.White,
-            tonalElevation = 2.dp
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = if (isSelected) Color.White else Color.Gray,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            color = if (isSelected) accentPurple else Color.Gray
-        )
     }
 }
